@@ -46,6 +46,19 @@ const serializer_entry serializers[] = {
     .set_link_speed_gbps   = max9295d_set_link_speed_gbps,
     .get_stats             = max9295d_get_stats,
   },
+  /* MAX96793 */
+  {
+    .ser_devid             = 0xB7,
+    .ser_name              = "MAX96793",
+    .rx_ports              = 1,
+    .init                  = max96793_init,
+    .start                 = max96793_start,
+    .set_mipi_rx_params    = max96793_set_mipi_rx_params,
+    .reset_link            = max96793_reset_link,
+    .wait_for_link         = max96793_wait_for_link,
+    .set_link_speed_gbps   = max96793_set_link_speed_gbps,
+    .get_stats             = max96793_get_stats,
+  },
 };
 
 const uint8_t serializer_default_i2c_slave[] =

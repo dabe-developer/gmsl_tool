@@ -134,6 +134,15 @@ int  max96717_wait_for_link(pserializer_ctx pctx);
 int  max96717_set_link_speed_gbps(pserializer_ctx pctx, int speed);
 int  max96717_get_stats(pserializer_ctx pctx);
 
+int  max96793_init(pserializer_ctx pctx);
+int  max96793_start(pserializer_ctx pctx);
+int  max96793_set_mipi_rx_params(pserializer_ctx pctx,
+        int port, int lanes, uint16_t lane_mapping, uint16_t lane_polarity, int skew_en, int tunnel_mode_en);
+int  max96793_reset_link(pserializer_ctx pctx);
+int  max96793_wait_for_link(pserializer_ctx pctx);
+int  max96793_set_link_speed_gbps(pserializer_ctx pctx, int speed);
+int  max96793_get_stats(pserializer_ctx pctx);
+
 int  max9295d_init(pserializer_ctx pctx);
 int  max9295d_start(pserializer_ctx pctx);
 int  max9295d_set_mipi_rx_params(pserializer_ctx pctx,

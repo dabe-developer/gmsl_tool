@@ -45,6 +45,11 @@ int max96792_start(pdeserializer_ctx pctx)
 {
     DESER_CTX_CHECK(pctx);
 
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0313, 0x02);
+
+    /* VIDEO_PIPE_EN to 1 */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0160, 0x03);
+
     return 0;
 }
 
@@ -54,7 +59,63 @@ int max96792_set_mipi_tx_params(pdeserializer_ctx pctx,
     uint8_t reg8 = 0;
 
     DESER_CTX_CHECK(pctx);
-    (void)reg8;
+
+    /* BACKTOP : BACKTOP12 | CSI_OUT_EN (CSI_OUT_EN): CSI output disabled */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0313, 0x00);
+
+    /* VIDEO_PIPE_SEL stream Y -> Link A streamID 0, Z-> Link B steamID 1 */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0161, 0x28);
+
+    /* MIPI_TX10: Set Lane count */
+    reg8 = ((lanes - 1) << 6) | 0x10;
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x044A, reg8);
+    
+    /* MIPI_PHY3 */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0333, lane_mapping & 0xFF);
+    /* MIPI_PHY4 */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0334, lane_mapping & 0xFF);
+    /* MIPI_PHY5 */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0335, lane_polarity & 0x3F);
+    /* MIPI_PHY6 */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0336, lane_polarity & 0x3F);
+
+    reg8 = 0x20;
+    if (out_freq <= 80) {
+        /* 0 value */
+    } else {
+        reg8 |= ((out_freq / 100) & 0x1F);
+    }
+    /* BACKTOP22: Set MIPI TX speed */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x031D, reg8);
+    /* BACKTOP25: Set MIPI TX speed */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0320, reg8);
+
+    if (tunnel_mode_en != 0)
+    {
+        /* MIPI_TX52 - Tunnel ON */
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0474, 0x09);
+        /* Reset link */
+        //i2c_write_reg8a16(pctx->i2c_slave_address, 0x0010, 0x31);
+        //usleep(500 * 100);
+    }
+
+    usleep(MIPI_TX_DELAY);
+
+    if (deskew_en != 0) {
+        /* MIPI_TX3 */
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0443, 0x81);
+        /* MIPI_TX4 */
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0444, 0xB9);
+        /* MIPI_TX50 - VC0 only */
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0472, 0x80);
+    }
+    /* MIPI PHY16 - Reporting on */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0340, 0x39);
+
+    /* LCRC on */
+    i2c_read_reg8a16(pctx->i2c_slave_address, 0x0112, &reg8);
+    reg8 |= (1 << 1);
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0112, reg8);
 
     return 0;
 }
@@ -85,15 +146,38 @@ int max96792_wait_for_link(pdeserializer_ctx pctx)
 
 int max96792_set_link_speed_gbps(pdeserializer_ctx pctx, int speed)
 {
+    uint8_t reg8 = 0;
+    
     DESER_CTX_CHECK(pctx);
 
     switch(speed)
     {
     case 3:
+        /* Enable 3G */
+        i2c_read_reg8a16(pctx->i2c_slave_address, 0x0001, &reg8);
+        reg8 &= ~0x3;
+        reg8 |= (1 << 0);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0001, reg8);
+
+        printf("MAX96792A prepared for 3G.\r\n");
         break;
     case 6:
+        /* Enable 6G */
+        i2c_read_reg8a16(pctx->i2c_slave_address, 0x0001, &reg8);
+        reg8 &= ~0x3;
+        reg8 |= (2 << 0);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0001, reg8);
+
+        printf("MAX96792A prepared for 6G.\r\n");
         break;
     case 12:
+        /* Enable 12G */
+        i2c_read_reg8a16(pctx->i2c_slave_address, 0x0001, &reg8);
+        reg8 &= ~0x3;
+        reg8 |= (3 << 0);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0001, reg8);
+
+        printf("MAX96792A prepared for 12G.\r\n");
         break;
     default:
         break;
@@ -108,10 +192,15 @@ int max96792_reset_link(pdeserializer_ctx pctx)
 
     DESER_CTX_CHECK(pctx);
 
-    /* Reset one shot */
+    /* Reset one shot A */
     i2c_read_reg8a16(pctx->i2c_slave_address,  0x0010, &reg8);
     reg8 |= (1 << 5);
     i2c_write_reg8a16(pctx->i2c_slave_address, 0x0010, reg8);
+
+    /* Reset one shot B */
+    i2c_read_reg8a16(pctx->i2c_slave_address,  0x0012, &reg8);
+    reg8 |= (1 << 5);
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0012, reg8);
 
     return 0;
 }

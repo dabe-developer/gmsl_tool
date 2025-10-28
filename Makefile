@@ -17,6 +17,7 @@ SRCS = \
     src/max96712.c \
     src/max96714.c \
     src/max96717.c \
+    src/max96793.c \
     src/max96792.c \
     src/serdes_setup.c \
     src/serializer.c
