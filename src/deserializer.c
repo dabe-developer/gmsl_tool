@@ -171,7 +171,14 @@ int deserializer_search_for_serializer(void)
         if (ret < 0) return ret;
     }
     ret = deserializers[found_inx_deser].wait_for_link(&deser_content);
-
+    if (ret < 0)
+    {
+        /* Set 6Gbps rate */
+        ret = deserializers[found_inx_deser].set_link_speed_gbps(&deser_content, 6);
+        if (ret < 0) return ret;
+        ret = deserializers[found_inx_deser].wait_for_link(&deser_content);
+    }
+    
     if (ret >= 0)
         printf("Link with serializer is OK\r\n");
 

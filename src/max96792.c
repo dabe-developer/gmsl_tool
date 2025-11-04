@@ -198,9 +198,9 @@ int max96792_reset_link(pdeserializer_ctx pctx)
     i2c_write_reg8a16(pctx->i2c_slave_address, 0x0010, reg8);
 
     /* Reset one shot B */
-    i2c_read_reg8a16(pctx->i2c_slave_address,  0x0012, &reg8);
-    reg8 |= (1 << 5);
-    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0012, reg8);
+    //i2c_read_reg8a16(pctx->i2c_slave_address,  0x0012, &reg8);
+    //reg8 |= (1 << 5);
+    //i2c_write_reg8a16(pctx->i2c_slave_address, 0x0012, reg8);
 
     return 0;
 }
