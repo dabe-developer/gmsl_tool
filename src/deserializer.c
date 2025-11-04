@@ -158,7 +158,7 @@ int deserializer_search_for_serializer(void)
         {
             ret = deserializers[found_inx_deser].set_link_speed_gbps(&deser_content, 3);
         }
-    } else {
+    } else if (deser_content.features & FEATURE_DES_3GBPS) {
         ret = deserializers[found_inx_deser].set_link_speed_gbps(&deser_content, 3);
     }
     if (ret < 0) return ret;
@@ -167,16 +167,27 @@ int deserializer_search_for_serializer(void)
     if (ret < 0)
     {
         /* Set lowest rate */
-        ret = deserializers[found_inx_deser].set_link_speed_gbps(&deser_content, 3);
+        if (deser_content.features & FEATURE_DES_6GBPS)
+        {
+            ret = deserializers[found_inx_deser].set_link_speed_gbps(&deser_content, 6);
+            if (ret < 0) return ret;
+        } else if (deser_content.features & FEATURE_DES_3GBPS) {
+            ret = deserializers[found_inx_deser].set_link_speed_gbps(&deser_content, 3);
+            if (ret < 0) return ret;
+        }
+        ret = deserializers[found_inx_deser].wait_for_link(&deser_content);
         if (ret < 0) return ret;
     }
     ret = deserializers[found_inx_deser].wait_for_link(&deser_content);
     if (ret < 0)
     {
-        /* Set 6Gbps rate */
-        ret = deserializers[found_inx_deser].set_link_speed_gbps(&deser_content, 6);
-        if (ret < 0) return ret;
-        ret = deserializers[found_inx_deser].wait_for_link(&deser_content);
+        if (deser_content.features & FEATURE_DES_3GBPS)
+        {
+            /* Set 3Gbps rate */
+            ret = deserializers[found_inx_deser].set_link_speed_gbps(&deser_content, 3);
+            if (ret < 0) return ret;
+            ret = deserializers[found_inx_deser].wait_for_link(&deser_content);
+        }
     }
     
     if (ret >= 0)

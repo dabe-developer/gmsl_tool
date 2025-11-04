@@ -35,8 +35,11 @@ int max96792_init(pdeserializer_ctx pctx)
 
     /* RX0 Counting Video packets only */
     i2c_write_reg8a16(pctx->i2c_slave_address, 0x002C, 0x01);
+ 
+    /* Coax drive */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0011, 0x0F);
 
-    pctx->features = FEATURE_DES_12GBPS | FEATURE_DES_6GBPS | FEATURE_DES_3GBPS;
+    pctx->features = FEATURE_DES_12GBPS | FEATURE_DES_6GBPS;
 
     return 0;
 }
@@ -150,6 +153,11 @@ int max96792_set_link_speed_gbps(pdeserializer_ctx pctx, int speed)
     
     DESER_CTX_CHECK(pctx);
 
+    /* Keep link in reset */
+    i2c_read_reg8a16(pctx->i2c_slave_address, 0x0010, &reg8);
+    reg8 |= (1 << 6);
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0010, reg8);
+
     switch(speed)
     {
     case 3:
@@ -168,6 +176,17 @@ int max96792_set_link_speed_gbps(pdeserializer_ctx pctx, int speed)
         reg8 |= (2 << 0);
         i2c_write_reg8a16(pctx->i2c_slave_address, 0x0001, reg8);
 
+        /* Disable FEC */
+        i2c_read_reg8a16(pctx->i2c_slave_address,  0x0028, &reg8);
+        reg8 &= ~(1 << 1);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0028, reg8);
+
+        /* Enable GMSL2 */
+        i2c_read_reg8a16(pctx->i2c_slave_address,  0x0004, &reg8);
+        reg8 &= ~(3 << 6);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0004, reg8);
+        
+
         printf("MAX96792A prepared for 6G.\r\n");
         break;
     case 12:
@@ -177,11 +196,26 @@ int max96792_set_link_speed_gbps(pdeserializer_ctx pctx, int speed)
         reg8 |= (3 << 0);
         i2c_write_reg8a16(pctx->i2c_slave_address, 0x0001, reg8);
 
+        /* Enable FEC */
+        i2c_read_reg8a16(pctx->i2c_slave_address,  0x0028, &reg8);
+        reg8 |= (1 << 1);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0028, reg8);
+
+        /* Disable GMSL2 */
+        i2c_read_reg8a16(pctx->i2c_slave_address,  0x0004, &reg8);
+        reg8 |= (3 << 6);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0004, reg8);
+
         printf("MAX96792A prepared for 12G.\r\n");
         break;
     default:
         break;
     }
+
+    /* Release link */
+    i2c_read_reg8a16(pctx->i2c_slave_address, 0x0010, &reg8);
+    reg8 &= ~(1 << 6);
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0010, reg8);
 
     return 0;
 }
@@ -253,6 +287,9 @@ int max96792_get_stats(pdeserializer_ctx pctx)
     i2c_read_reg8a16(pctx->i2c_slave_address, 0x0025, &reg8);
     pctx->deser_stats[0].global_pkt_count = reg8;
     i2c_write_reg8a16(pctx->i2c_slave_address, 0x0025, 0x00);
+
+    i2c_read_reg8a16(pctx->i2c_slave_address, 0x0474, &reg8);
+    pctx->deser_stats[0].video_tunnel_flag = reg8 & (1 << 0) ? 1 : 0;
 
     return 0;
 }

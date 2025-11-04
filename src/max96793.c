@@ -32,6 +32,9 @@ int max96793_init(pserializer_ctx pctx)
 
     SER_CTX_CHECK(pctx);
 
+    /* Coax drive */
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0011, 0x03);
+
     /* DEV : REG2 | VID_TX_EN_Z (VID_TX_EN_Z): Disabled */
     i2c_write_reg8a16(pctx->i2c_slave_address, 0x0002, 0x03);
 
@@ -49,9 +52,9 @@ int max96793_init(pserializer_ctx pctx)
     i2c_write_reg8a16(pctx->i2c_slave_address, 0x41, 0x55);
 
     /* Stop heartbeat */
-    i2c_read_reg8a16(pctx->i2c_slave_address, 0x0112, &reg8);
-    reg8 &= 0xFB;
-    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0112, reg8);
+    //i2c_read_reg8a16(pctx->i2c_slave_address, 0x0112, &reg8);
+    ///reg8 &= 0xFB;
+    //i2c_write_reg8a16(pctx->i2c_slave_address, 0x0112, reg8);
 
     /* GPIO4 */
     i2c_write_reg8a16(pctx->i2c_slave_address, 0x0570, 0x00);
@@ -190,6 +193,16 @@ int max96793_set_link_speed_gbps(pserializer_ctx pctx, int speed)
         reg8 |= 0x8;
         i2c_write_reg8a16(pctx->i2c_slave_address, 0x0001, reg8);
 
+        /* Disable FEC */
+        i2c_read_reg8a16(pctx->i2c_slave_address,  0x0028, &reg8);
+        reg8 &= ~(1 << 1);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0028, reg8);
+
+        /* Enable GMSL2 */
+        i2c_read_reg8a16(pctx->i2c_slave_address,  0x0006, &reg8);
+        reg8 |= (1 << 7);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0006, reg8);
+        
         printf("MAX96793 prepared for 6G.\r\n");
         break;
     case 12:
@@ -197,6 +210,16 @@ int max96793_set_link_speed_gbps(pserializer_ctx pctx, int speed)
         i2c_read_reg8a16(pctx->i2c_slave_address, 0x0001, &reg8);
         reg8 |= 0xC;
         i2c_write_reg8a16(pctx->i2c_slave_address, 0x0001, reg8);
+
+        /* Enable FEC */
+        i2c_read_reg8a16(pctx->i2c_slave_address,  0x0028, &reg8);
+        reg8 |= (1 << 1);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0028, reg8);
+
+        /* Disable GMSL2 */
+        i2c_read_reg8a16(pctx->i2c_slave_address,  0x0006, &reg8);
+        reg8 &= ~(1 << 7);
+        i2c_write_reg8a16(pctx->i2c_slave_address, 0x0006, reg8);
 
         printf("MAX96793 prepared for 12G.\r\n");
         break;
@@ -209,10 +232,14 @@ int max96793_set_link_speed_gbps(pserializer_ctx pctx, int speed)
 
 int max96793_reset_link(pserializer_ctx pctx)
 {
+    uint8_t reg8 = 0;
+
     SER_CTX_CHECK(pctx);
 
     /* Reset one shot */
-    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0010, 0x21);
+    i2c_read_reg8a16(pctx->i2c_slave_address,  0x0010, &reg8);
+    reg8 |= (1 << 5);
+    i2c_write_reg8a16(pctx->i2c_slave_address, 0x0010, reg8);
 
     return 0;
 }
