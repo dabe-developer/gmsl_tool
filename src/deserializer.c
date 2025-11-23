@@ -59,11 +59,24 @@ const deserializer_entry deserializers[] = {
     .set_link_speed_gbps   = max96714_set_link_speed_gbps,
     .get_stats             = max96714_get_stats,
   },
+  /* MAX96724 */
+  {
+    .deser_devid           = 0xA2,
+    .deser_name            = "MAX96724",
+    .tx_ports              = 4,
+    .init                  = max96724_init,
+    .start                 = max96724_start,
+    .set_mipi_tx_params    = max96724_set_mipi_tx_params,
+    .reset_link            = max96724_reset_link,
+    .wait_for_link         = max96724_wait_for_link,
+    .set_link_speed_gbps   = max96724_set_link_speed_gbps,
+    .get_stats             = max96724_get_stats,
+  },
 };
 
 const uint8_t deserializer_default_i2c_slave[] =
 {
-  0x6AU, 0x28U, 0x29
+  0x6AU, 0x27, 0x28U, 0x29
 };
 
 /* Variables */
@@ -175,8 +188,8 @@ int deserializer_search_for_serializer(void)
             ret = deserializers[found_inx_deser].set_link_speed_gbps(&deser_content, 3);
             if (ret < 0) return ret;
         }
-        ret = deserializers[found_inx_deser].wait_for_link(&deser_content);
-        if (ret < 0) return ret;
+        //ret = deserializers[found_inx_deser].wait_for_link(&deser_content);
+        //if (ret < 0) return ret;
     }
     ret = deserializers[found_inx_deser].wait_for_link(&deser_content);
     if (ret < 0)

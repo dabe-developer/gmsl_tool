@@ -16,6 +16,7 @@ SRCS = \
     src/max9295d.c \
     src/max96712.c \
     src/max96714.c \
+    src/max96724.c \
     src/max96717.c \
     src/max96793.c \
     src/max96792.c \

@@ -179,6 +179,15 @@ int  max96712_wait_for_link(pdeserializer_ctx pctx);
 int  max96712_set_link_speed_gbps(pdeserializer_ctx pctx, int speed);
 int  max96712_get_stats(pdeserializer_ctx pctx);
 
+int  max96724_init(pdeserializer_ctx pctx);
+int  max96724_start(pdeserializer_ctx pctx);
+int  max96724_set_mipi_tx_params(pdeserializer_ctx pctx,
+        int port, int lanes, uint16_t lane_mapping, uint16_t lane_polarity, int deskew_en, int out_freq, int tunnel_mode_en);
+int  max96724_reset_link(pdeserializer_ctx pctx);
+int  max96724_wait_for_link(pdeserializer_ctx pctx);
+int  max96724_set_link_speed_gbps(pdeserializer_ctx pctx, int speed);
+int  max96724_get_stats(pdeserializer_ctx pctx);
+
 int  application_opt_parsing(int argc, char *argv[]);
 
 int  serializer_search_chip(void);
